@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState, useSyncExternalStore } from "react";
+import { trackProductEvent } from "./analytics";
 
 type Offer = {
   id: string;
@@ -108,7 +109,14 @@ function subscribeToStoredOffers(onStoreChange: () => void) {
 }
 
 function parseStoredOffers(snapshot: string) {
-  const parsedOffers: unknown = JSON.parse(snapshot);
+  let parsedOffers: unknown;
+
+  try {
+    parsedOffers = JSON.parse(snapshot);
+  } catch {
+    return [];
+  }
+
   if (Array.isArray(parsedOffers) && parsedOffers.every(isOffer)) {
     return parsedOffers;
   }
@@ -168,11 +176,28 @@ export default function Home() {
       },
       ...offers,
     ]);
+    trackProductEvent("offer_saved", {
+      has_equity: form.equity > 0,
+      has_bonus: form.bonus > 0,
+      has_notes: form.notes.trim().length > 0,
+      saved_offer_count: offers.length + 1,
+    });
     setForm(emptyForm);
   }
 
   function removeOffer(id: string) {
     saveOffers(offers.filter((offer) => offer.id !== id));
+    trackProductEvent("offer_removed", {
+      saved_offer_count: Math.max(offers.length - 1, 0),
+    });
+  }
+
+  function updateSortKey(nextSortKey: SortKey) {
+    setSortKey(nextSortKey);
+    trackProductEvent("offers_sorted", {
+      sort_key: nextSortKey,
+      saved_offer_count: offers.length,
+    });
   }
 
   return (
@@ -183,6 +208,9 @@ export default function Home() {
           <a
             className="rounded-full border border-white/15 px-4 py-2 text-sm text-slate-200 transition hover:border-cyan-300 hover:text-white"
             href="#compare"
+            onClick={() =>
+              trackProductEvent("cta_clicked", { cta: "nav_compare_offers" })
+            }
           >
             Compare offers
           </a>
@@ -328,7 +356,7 @@ export default function Home() {
               Sort by
               <select
                 className="rounded-full border border-white/10 bg-slate-900 px-4 py-2 text-white outline-none focus:border-cyan-300"
-                onChange={(event) => setSortKey(event.target.value as SortKey)}
+                onChange={(event) => updateSortKey(event.target.value as SortKey)}
                 value={sortKey}
               >
                 <option value="total">Total compensation</option>

@@ -27,9 +27,14 @@ npm run build  # create a production build
 - TypeScript
 - Tailwind CSS
 - ESLint
+- Vercel Analytics
 
 ## Next steps
 
 - Add real offer search and filtering.
 - Add saved comparisons.
 - Add data import/export.
+
+## Analytics
+
+OfferLookup tracks privacy-safe usage events with Vercel Analytics. The event plan is documented in [docs/analytics-plan.md](docs/analytics-plan.md).
