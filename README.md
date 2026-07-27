@@ -34,6 +34,7 @@ npm run build  # create a production build
 - Add real offer search and filtering.
 - Add saved comparisons.
 - Add data import/export.
+- Review whether edit-offer reduces removals in analytics.
 
 ## Analytics
 

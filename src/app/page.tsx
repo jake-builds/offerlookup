@@ -131,6 +131,7 @@ function saveOffers(offers: Offer[]) {
 
 export default function Home() {
   const [form, setForm] = useState<OfferForm>(emptyForm);
+  const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("total");
   const offersSnapshot = useSyncExternalStore(
     subscribeToStoredOffers,
@@ -155,6 +156,7 @@ export default function Home() {
 
   const visibleOffers = sortedOffers.length > 0 ? sortedOffers : sampleOffers;
   const isShowingSamples = sortedOffers.length === 0;
+  const isEditingOffer = editingOfferId !== null;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -166,16 +168,31 @@ export default function Home() {
       return;
     }
 
-    saveOffers([
-      {
-        ...form,
-        id: crypto.randomUUID(),
-        company: trimmedCompany,
-        role: trimmedRole,
-        notes: form.notes.trim(),
-      },
-      ...offers,
-    ]);
+    const offerDetails = {
+      ...form,
+      company: trimmedCompany,
+      role: trimmedRole,
+      notes: form.notes.trim(),
+    };
+
+    if (editingOfferId) {
+      saveOffers(
+        offers.map((offer) =>
+          offer.id === editingOfferId ? { ...offerDetails, id: offer.id } : offer,
+        ),
+      );
+      trackProductEvent("offer_edited", {
+        has_equity: form.equity > 0,
+        has_bonus: form.bonus > 0,
+        has_notes: form.notes.trim().length > 0,
+        saved_offer_count: offers.length,
+      });
+      setEditingOfferId(null);
+      setForm(emptyForm);
+      return;
+    }
+
+    saveOffers([{ ...offerDetails, id: crypto.randomUUID() }, ...offers]);
     trackProductEvent("offer_saved", {
       has_equity: form.equity > 0,
       has_bonus: form.bonus > 0,
@@ -190,6 +207,28 @@ export default function Home() {
     trackProductEvent("offer_removed", {
       saved_offer_count: Math.max(offers.length - 1, 0),
     });
+    if (editingOfferId === id) {
+      setEditingOfferId(null);
+      setForm(emptyForm);
+    }
+  }
+
+  function editOffer(offer: Offer) {
+    setEditingOfferId(offer.id);
+    setForm({
+      company: offer.company,
+      role: offer.role,
+      baseSalary: offer.baseSalary,
+      equity: offer.equity,
+      bonus: offer.bonus,
+      notes: offer.notes,
+    });
+    trackProductEvent("cta_clicked", { cta: "edit_offer" });
+  }
+
+  function cancelEdit() {
+    setEditingOfferId(null);
+    setForm(emptyForm);
   }
 
   function updateSortKey(nextSortKey: SortKey) {
@@ -235,9 +274,13 @@ export default function Home() {
             onSubmit={handleSubmit}
           >
             <div className="mb-6">
-              <h2 className="text-2xl font-semibold">Add an offer</h2>
+              <h2 className="text-2xl font-semibold">
+                {isEditingOffer ? "Edit offer" : "Add an offer"}
+              </h2>
               <p className="mt-2 text-sm text-slate-400">
-                Saved locally on this device. Company and role are required.
+                {isEditingOffer
+                  ? "Update the saved details without re-entering the offer."
+                  : "Saved locally on this device. Company and role are required."}
               </p>
             </div>
 
@@ -329,12 +372,23 @@ export default function Home() {
               </label>
             </div>
 
-            <button
-              className="mt-6 w-full rounded-full bg-cyan-300 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200"
-              type="submit"
-            >
-              Save offer
-            </button>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <button
+                className="w-full rounded-full bg-cyan-300 px-6 py-3 font-semibold text-slate-950 transition hover:bg-cyan-200"
+                type="submit"
+              >
+                {isEditingOffer ? "Update offer" : "Save offer"}
+              </button>
+              {isEditingOffer && (
+                <button
+                  className="w-full rounded-full border border-white/10 px-6 py-3 font-semibold text-slate-200 transition hover:border-white/30"
+                  onClick={cancelEdit}
+                  type="button"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
@@ -405,13 +459,22 @@ export default function Home() {
                       </td>
                       <td className="px-4 py-4">
                         {!isShowingSamples && (
-                          <button
-                            className="rounded-full border border-white/10 px-3 py-1 text-slate-300 transition hover:border-red-300 hover:text-red-200"
-                            onClick={() => removeOffer(offer.id)}
-                            type="button"
-                          >
-                            Remove
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              className="rounded-full border border-white/10 px-3 py-1 text-slate-300 transition hover:border-cyan-300 hover:text-cyan-200"
+                              onClick={() => editOffer(offer)}
+                              type="button"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="rounded-full border border-white/10 px-3 py-1 text-slate-300 transition hover:border-red-300 hover:text-red-200"
+                              onClick={() => removeOffer(offer.id)}
+                              type="button"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
