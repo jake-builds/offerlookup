@@ -129,6 +129,15 @@ function saveOffers(offers: Offer[]) {
   window.dispatchEvent(new Event(offersChangedEvent));
 }
 
+function escapeCsvValue(value: string | number) {
+  const stringValue = String(value);
+  if (/[",\n]/.test(stringValue)) {
+    return `"${stringValue.replaceAll('"', '""')}"`;
+  }
+
+  return stringValue;
+}
+
 export default function Home() {
   const [form, setForm] = useState<OfferForm>(emptyForm);
   const [editingOfferId, setEditingOfferId] = useState<string | null>(null);
@@ -236,6 +245,37 @@ export default function Home() {
     trackProductEvent("offers_sorted", {
       sort_key: nextSortKey,
       saved_offer_count: offers.length,
+    });
+  }
+
+  function exportOffers() {
+    const rows = [
+      ["Company", "Role", "Base salary", "Equity", "Bonus", "Total", "Notes"],
+      ...sortedOffers.map((offer) => [
+        offer.company,
+        offer.role,
+        offer.baseSalary,
+        offer.equity,
+        offer.bonus,
+        totalCompensation(offer),
+        offer.notes,
+      ]),
+    ];
+    const csv = rows
+      .map((row) => row.map((value) => escapeCsvValue(value)).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "offerlookup-offers.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+
+    trackProductEvent("offers_exported", {
+      saved_offer_count: offers.length,
+      sort_key: sortKey,
     });
   }
 
@@ -406,18 +446,29 @@ export default function Home() {
               </p>
             </div>
 
-            <label className="flex items-center gap-3 text-sm text-slate-300">
-              Sort by
-              <select
-                className="rounded-full border border-white/10 bg-slate-900 px-4 py-2 text-white outline-none focus:border-cyan-300"
-                onChange={(event) => updateSortKey(event.target.value as SortKey)}
-                value={sortKey}
-              >
-                <option value="total">Total compensation</option>
-                <option value="company">Company</option>
-                <option value="role">Role</option>
-              </select>
-            </label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              {!isShowingSamples && (
+                <button
+                  className="rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-cyan-300 hover:text-cyan-200"
+                  onClick={exportOffers}
+                  type="button"
+                >
+                  Export CSV
+                </button>
+              )}
+              <label className="flex items-center gap-3 text-sm text-slate-300">
+                Sort by
+                <select
+                  className="rounded-full border border-white/10 bg-slate-900 px-4 py-2 text-white outline-none focus:border-cyan-300"
+                  onChange={(event) => updateSortKey(event.target.value as SortKey)}
+                  value={sortKey}
+                >
+                  <option value="total">Total compensation</option>
+                  <option value="company">Company</option>
+                  <option value="role">Role</option>
+                </select>
+              </label>
+            </div>
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-white/10">

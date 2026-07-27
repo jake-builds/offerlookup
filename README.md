@@ -33,7 +33,7 @@ npm run build  # create a static production build in ./out
 
 - Add real offer search and filtering.
 - Add saved comparisons.
-- Add data import/export.
+- Add CSV import.
 - Review whether edit-offer reduces removals in analytics.
 
 ## Analytics

@@ -32,6 +32,7 @@ All custom events are privacy-safe. Do not send company names, role titles, note
 | `offer_saved` | Visitor successfully saves an offer | `has_equity`, `has_bonus`, `has_notes`, `saved_offer_count` |
 | `offer_edited` | Visitor updates an existing saved offer | `has_equity`, `has_bonus`, `has_notes`, `saved_offer_count` |
 | `offers_sorted` | Visitor changes the comparison sort | `sort_key`, `saved_offer_count` |
+| `offers_exported` | Visitor exports saved offers to CSV | `sort_key`, `saved_offer_count` |
 | `offer_removed` | Visitor removes a saved offer | `saved_offer_count` |
 
 ## This week's execution plan
@@ -46,5 +47,5 @@ All custom events are privacy-safe. Do not send company names, role titles, note
 
 - If visitors view but do not save offers, improve the landing message and sample data.
 - If visitors save exactly one offer, add prompts that explain why comparing two or more offers is more useful.
-- If visitors save offers but never sort, make the comparison insight more obvious.
+- If visitors save offers but never sort or export, make the comparison insight more obvious.
 - If removals are high, prioritize edit support over new features.

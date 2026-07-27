@@ -4,6 +4,7 @@ import { track } from "@vercel/analytics";
 
 type AnalyticsEvent =
   | "cta_clicked"
+  | "offers_exported"
   | "offer_edited"
   | "offer_saved"
   | "offer_removed"
