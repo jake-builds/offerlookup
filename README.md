@@ -18,7 +18,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ```bash
 npm run dev    # start local development
 npm run lint   # run ESLint
-npm run build  # create a production build
+npm run build  # create a static production build in ./out
 ```
 
 ## Stack
@@ -39,3 +39,7 @@ npm run build  # create a production build
 ## Analytics
 
 OfferLookup tracks privacy-safe usage events with Vercel Analytics. The event plan is documented in [docs/analytics-plan.md](docs/analytics-plan.md).
+
+## Deployment
+
+The app is configured for static export and GitHub Pages deployment from `main`.
